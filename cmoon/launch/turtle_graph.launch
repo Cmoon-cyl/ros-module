@@ -1,0 +1,8 @@
+<!--Created by Cmoon-->
+<launch>
+    <!-- turtlesim_node -->
+    <node pkg="turtlesim" type="turtlesim_node" name="turtlesim_node" output="screen" respawn="true"/>
+
+    <!-- turtle_graph -->
+    <node pkg="cmoon" type="turtle_graph.py" name="turtle_graph" output="screen"/>
+</launch>

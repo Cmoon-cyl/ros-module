@@ -1,5 +1,7 @@
 # ros-module
 放进src里编译,缺啥装啥  
+可能会缺 rbx1,arbotix,robot-state-publisher,pdfkit,wkhtmltopdf  
+不要忘了给python文件加可执行权限  
 部分语句:  
 roslaunch cmoon rviz_monitu.launch 启动仿真环境  
 roslaunch cmoon  yolo2ros.launch yolo实时检测 (需要azure kinect ros 驱动并且插上上摄像头)  

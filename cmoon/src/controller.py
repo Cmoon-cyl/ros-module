@@ -27,12 +27,16 @@ class Controller:
         self.soundplayer = Soundplayer()  # 实例化语音合成模块
         self.recognizer = Recognizer()  # 实例化语音识别和逻辑判断模块
         self.pdfmaker = Pdfmaker()  # 实例化pdf导出模块
-        self.soundplayer.play("I'm ready, please give me the commend.")  # 语音合成模块调用play方法传入字符串即可播放
+        self.soundplayer.say("I'm ready, please give me the commend.")  # 语音合成模块调用play方法传入字符串即可播放
         rospy.sleep(3)  # 睡3秒等待上面的话讲完
         self.recognizer.get_cmd()  # 获取一次语音命令
 
     def go_point(self, place):  # 订阅者的回调函数,传入的place是String类型消息 .data可以获取传来的信息
         self.navigator.goto(place.data)  # 导航模块调用goto方法,传入去的地点名字符串即可导航区指定地点
+        self.soundplayer.say('Starting to find rubbish')
+
+    def detect(self):
+        pass
 
 
 if __name__ == '__main__':

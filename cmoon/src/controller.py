@@ -7,6 +7,7 @@ from navigator import Navigator  # 导航模块
 from soundplayer import Soundplayer  # 语音合成模块
 from voice_recognizer import Recognizer  # 语音识别模块和分析模块
 from pdfmaker import Pdfmaker  # pdf制作模块
+from base_controller import Base
 from std_msgs.msg import String  # String类型消息,从String.data中可获得信息
 
 LOCATION = {  # 储存导航路径点
@@ -23,10 +24,11 @@ class Controller:
     def __init__(self, name):
         rospy.init_node(name, anonymous=True)  # 初始化ros节点
         rospy.Subscriber('/start_signal', String, self.go_point)  # 创建订阅者订阅recognizer发出的地点作为启动信号
-        self.navigator = Navigator()  # 实例化导航模块
+        self.navigator = Navigator(LOCATION)  # 实例化导航模块
         self.soundplayer = Soundplayer()  # 实例化语音合成模块
         self.recognizer = Recognizer()  # 实例化语音识别和逻辑判断模块
         self.pdfmaker = Pdfmaker()  # 实例化pdf导出模块
+        self.base=Base()
         self.soundplayer.say("I'm ready, please give me the commend.")  # 语音合成模块调用play方法传入字符串即可播放
         rospy.sleep(3)  # 睡3秒等待上面的话讲完
         self.recognizer.get_cmd()  # 获取一次语音命令
@@ -34,9 +36,15 @@ class Controller:
     def go_point(self, place):  # 订阅者的回调函数,传入的place是String类型消息 .data可以获取传来的信息
         self.navigator.goto(place.data)  # 导航模块调用goto方法,传入去的地点名字符串即可导航区指定地点
         self.soundplayer.say('Starting to find rubbish')
+        self.detect()
 
     def detect(self):
+        self.soundplayer.say('Starting to track the rubbish.')
+        self.base.rotate(0.5)
+        rospy.sleep(5)
+        self.base.stop()
         pass
+
 
 
 if __name__ == '__main__':

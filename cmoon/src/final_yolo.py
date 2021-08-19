@@ -1,24 +1,17 @@
 #! /usr/bin/python3
+# coding: UTF-8
+# Created by Cmoon
 
-
-import roslib
-# from cv_bridge import CvBridge
 import rospy
 from std_msgs.msg import Header
-from std_msgs.msg import String
-from sensor_msgs.msg import CompressedImage
 from sensor_msgs.msg import Image
 
 IMAGE_WIDTH = 1241
 IMAGE_HEIGHT = 376
 
-import sys
-
 import os
-import time
 import cv2
 import torch
-from numpy import random
 import torch.backends.cudnn as cudnn
 import numpy as np
 from models.experimental import attempt_load
@@ -27,10 +20,7 @@ from utils.general import (
     xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
-from matplotlib import pyplot as plt
-
 ros_image = 0
-
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
     # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232

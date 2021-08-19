@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # coding: UTF-8 
-
+# Created by Cmoon
 
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-import cv2
 import os
 
 

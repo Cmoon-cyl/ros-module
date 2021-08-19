@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: UTF-8 
+# Created by Cmoon
 
 import rospy
 from std_msgs.msg import String
@@ -42,22 +43,22 @@ class Recognizer:
             response = self.analyze()
 
             if response == 'Do you need me ':
-                self._soundplayer.play("Please say the command again. ")
+                self._soundplayer.say("Please say the command again. ")
                 rospy.sleep(2)
                 self.get_cmd()
             else:
                 self.status = 1
                 print(response)
-                self._soundplayer.play(response)
+                self._soundplayer.say(response)
                 rospy.sleep(5)
-                self._soundplayer.play("please say yes or no.")
+                self._soundplayer.say("please say yes or no.")
                 print('Please say yes or no.')
                 rospy.sleep(2)
                 self.get_cmd()
 
         elif ('Yes.' in self.cmd) or ('yes' in self.cmd) and (self.status == 1):
 
-            self._soundplayer.play('Ok, I will.')
+            self._soundplayer.say('Ok, I will.')
             self._pdfmaker.write('Cmd: Do you need me go to the ' + self.goal + ' and clean the rubbish there?')
             self._pdfmaker.write('Respond: Ok,I will.')
             print('Ok, I will.')
@@ -69,7 +70,7 @@ class Recognizer:
 
         elif ('No.' in self.cmd) or ('no' in self.cmd) or ('oh' in self.cmd) or ('know' in self.cmd) and (
                 self.status == 1):
-            self._soundplayer.play("Please say the command again. ")
+            self._soundplayer.say("Please say the command again. ")
             print("Please say the command again. ")
             rospy.sleep(2)
             self.status = 0
@@ -83,7 +84,7 @@ class Recognizer:
         return cmd
 
     def get_cmd(self):
-        self._soundplayer.play('Speak.')
+        self._soundplayer.say('Speak.')
         self.wakeup.publish('ok')
 
     def analyze(self):

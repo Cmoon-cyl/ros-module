@@ -4,6 +4,7 @@
 import rospy
 from geometry_msgs.msg import Twist
 
+
 class Base:
     def __init__(self):
         self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)

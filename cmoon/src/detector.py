@@ -3,6 +3,8 @@
 
 import rospy
 from sensor_msgs.msg import Image
+from std_msgs.msg import String
+from pdfmaker import Pdfmaker
 
 IMAGE_WIDTH = 1241
 IMAGE_HEIGHT = 376
@@ -31,17 +33,23 @@ class Detector:
         self.imgsz = 640
         self.model = attempt_load(self.weights, map_location=self.device)  # load FP32 model
         self.imgsz = check_img_size(self.imgsz, s=self.model.stride.max())  # check img_size
+
         if self.half:
             self.model.half()  # to FP16
         rospy.Subscriber('/rgb_image', Image, self.image_callback, queue_size=1, buff_size=52428800)
-        image_pub = rospy.Publisher('/yolo_result_out', Image, queue_size=1)
+        rospy.Subscriber('/ros2yolo', String, self.send_img, queue_size=1)
+        self.pdfmaker = Pdfmaker()
+        self.yolo_result = rospy.Publisher('/yolo_result', String, queue_size=1)
+        self.rubbish_number = 0
 
     def image_callback(self, image):
-        global ros_image
-        ros_image = np.frombuffer(image.data, dtype=np.uint8).reshape(image.height, image.width, -1)
+        # global ros_image
+        self.ros_image = np.frombuffer(image.data, dtype=np.uint8).reshape(image.height, image.width, -1)
+
+    def send_img(self, msg):
+        rospy.loginfo('Cmd received.')
         with torch.no_grad():
-            if rospy.has_param('detect_key'):
-                self.detect(ros_image)
+            self.detect(self.ros_image)
 
     def detect(self, img):
         global ros_image
@@ -55,7 +63,7 @@ class Detector:
         augment = 'store_true'
         conf_thres = 0.3
         iou_thres = 0.45
-        classes = (39, 63, 64, 65, 66, 67)  # (0,1,2)
+        classes = (39, 64, 67)  # (0,1,2)
         agnostic_nms = 'store_true'
         img = torch.zeros((1, 3, self.imgsz, self.imgsz), device=self.device)  # init img
         _ = self.model(img.half() if self.half else img) if self.device.type != 'cpu' else None  # run once
@@ -80,7 +88,7 @@ class Detector:
 
         for i, det in enumerate(pred):  # detections per image
             p, s, im0 = path, '', im0s
-            s += '%gx%g ' % img.shape[2:]  # print string
+            # s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if det is not None:
                 # print(det)
@@ -89,7 +97,8 @@ class Detector:
                 # Print results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
-                    s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                    # s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                    s = names[int(c)]  # add to string
                     # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
@@ -100,15 +109,18 @@ class Detector:
                         label = '%s %.2f' % (names[int(cls)], conf)
                         plot_one_box(xyxy, im0, label=label, color=[0, 255, 0], line_thickness=3)
 
-            print('-----------------------------------------------------')
-            # print('{}  {:.2f}'.format(names[int(cls)], conf))
-            print(s)
+            if s != '':
+                print(s)
+                self.rubbish_number += 1
+                self.yolo_result.publish(s)
+                ros_image = im0[:, :, [2, 1, 0]]
+                path = os.path.dirname(os.path.dirname(__file__)) + '/pdf/'
+                savename = path+ 'rubbish' + str(self.rubbish_number) + '.jpg'
+                cv2.imwrite(savename, ros_image)
+                self.pdfmaker.write_img(savename)
 
         out_img = im0[:, :, [2, 1, 0]]
-        ros_image = out_img
         cv2.imshow('YOLOV5', out_img)
-        path = os.path.dirname(os.path.dirname(__file__))
-        cv2.imwrite(path + '/pdf/rubbish.jpg', ros_image)
         a = cv2.waitKey(1)
 
     def loadimg(self, img):  # 接受opencv图片

@@ -24,7 +24,6 @@ class Navigator:
         self.go_to_location(point)
         print('I have got the  ' + place)
         self.soundplayer.say('I have got the  ' + place)
-        rospy.sleep(2)
 
     def set_goal(self, name, position, orientation):
         """设置导航目标点的坐标和四元数"""

@@ -22,6 +22,7 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 ros_image = 0
 
+
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
     # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
     shape = img.shape[:2]  # current shape [height, width]

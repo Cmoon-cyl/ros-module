@@ -19,7 +19,13 @@ class Pdfmaker:
             f.write('<h2>' + text + '</h2>')
         self.make_pdf()
 
-    def write_img(self):
+    def write_img(self,filename):
+        with open(self.pdfpath + '/test.html', 'a') as f:
+            if '.jpg' in filename:
+                f.write('<img src="' + filename + '"><br>')
+        self.make_pdf()
+
+    def write_img_all(self):
         with open(self.pdfpath + '/test.html', 'a') as f:
             for filename in os.listdir(self.pdfpath):
                 if '.jpg' in filename:
@@ -33,7 +39,7 @@ class Pdfmaker:
 if __name__ == '__main__':
     pdfmaker = Pdfmaker()
     pdfmaker.write('Testing writing cmd to pdf file.')
-    pdfmaker.write_img()
+    pdfmaker.write_img_all()
     pdfmaker.make_pdf()
     pdfmaker.write('Testing writing again.')
     pdfmaker.make_pdf()

@@ -42,18 +42,16 @@ class Recognizer:
 
             response = self.analyze()
 
-            if response == 'Do you need me ':
+            if response == 'Do you need me':
                 self._soundplayer.say("Please say the command again. ")
-                rospy.sleep(2)
                 self.get_cmd()
             else:
                 self.status = 1
                 print(response)
                 self._soundplayer.say(response)
-                rospy.sleep(5)
+                rospy.sleep(2)
                 self._soundplayer.say("please say yes or no.")
                 print('Please say yes or no.')
-                rospy.sleep(2)
                 self.get_cmd()
 
         elif ('Yes.' in self.cmd) or ('yes' in self.cmd) and (self.status == 1):
@@ -72,9 +70,13 @@ class Recognizer:
                 self.status == 1):
             self._soundplayer.say("Please say the command again. ")
             print("Please say the command again. ")
-            rospy.sleep(2)
             self.status = 0
             self.goal = ''
+            self.get_cmd()
+
+        else:
+            self._soundplayer.say("please say yes or no.")
+            print('Please say yes or no.')
             self.get_cmd()
 
     def processed_cmd(self, cmd):
@@ -84,7 +86,7 @@ class Recognizer:
         return cmd
 
     def get_cmd(self):
-        self._soundplayer.say('Speak.')
+        self._soundplayer.play('Speak.')
         self.wakeup.publish('ok')
 
     def analyze(self):

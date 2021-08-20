@@ -17,6 +17,15 @@ LOCATION = {  # 储存导航路径点
     'bedroom': [[3.859466, -2.201285, 0.000000], [0.000000, 0.000000, -0.247601, -0.968862]],
     'dining room': [[3.583689, 0.334696, 0.000000], [0.000000, 0.000000, -0.820933, -0.571025]],
     'garage': [[0.166213, 3.886673, 0.000000], [0.000000, 0.000000, -0.982742, 0.184983]],
+    'rubbishbin1': [[-3.026017, -5.607293, 0.000000], [0.000000, 0.000000, -0.569564, 0.821947]],
+    'rubbishbin2': [[-1.275007, 0.378040, 0.000000], [0.000000, 0.000000, -0.817479, -0.575959]],
+    'rubbishbin3': [[3.978401, 3.763957, 0.000000], [0.000000, 0.000000, -0.213188, -0.977011]]
+}
+
+RUBBISH = {
+    'rubbishbin1': ['bottle'],
+    'rubbishbin2': ['mouse'],
+    'rubbishbin3': ['cell phone']
 }
 
 
@@ -24,27 +33,58 @@ class Controller:
     def __init__(self, name):
         rospy.init_node(name, anonymous=True)  # 初始化ros节点
         rospy.Subscriber('/start_signal', String, self.go_point)  # 创建订阅者订阅recognizer发出的地点作为启动信号
+        rospy.Subscriber('/yolo_result', String, self.save_result)
+        self.startyolo = rospy.Publisher('/ros2yolo', String, queue_size=10)
         self.navigator = Navigator(LOCATION)  # 实例化导航模块
         self.soundplayer = Soundplayer()  # 实例化语音合成模块
         self.recognizer = Recognizer()  # 实例化语音识别和逻辑判断模块
         self.pdfmaker = Pdfmaker()  # 实例化pdf导出模块
-        self.base=Base()
+        self.base = Base()
         self.soundplayer.say("I'm ready, please give me the commend.")  # 语音合成模块调用play方法传入字符串即可播放
-        rospy.sleep(3)  # 睡3秒等待上面的话讲完
         self.recognizer.get_cmd()  # 获取一次语音命令
+        self.result = None
+        self.goal = None
+        self.type = None
 
     def go_point(self, place):  # 订阅者的回调函数,传入的place是String类型消息 .data可以获取传来的信息
-        self.navigator.goto(place.data)  # 导航模块调用goto方法,传入去的地点名字符串即可导航区指定地点
-        self.soundplayer.say('Starting to find rubbish')
-        self.detect()
+        self.goal = place.data
+        for i in range(5):
+            self.navigator.goto(place.data)  # 导航模块调用goto方法,传入去的地点名字符串即可导航区指定地点
+            self.detect()
+            print(str(i + 1) + ' rubbish cleaned.')
+        self.soundplayer.say('Task completed.')
+
+    def save_result(self, string):
+        self.result = string.data
 
     def detect(self):
         self.soundplayer.say('Starting to track the rubbish.')
-        self.base.rotate(0.5)
-        rospy.sleep(5)
-        self.base.stop()
-        pass
+        self.result = None
+        while not rospy.is_shutdown():
+            self.startyolo.publish('detect')
+            self.base.rotate(1.0)
+            if self.result is not None:
+                self.base.stop()
+                self.soundplayer.say('I have found a ' + str(self.result))
+                break
+        self.soundplayer.say('Please hand me the ' + str(self.result))
+        self.judge(str(self.result))
 
+    def judge(self, result):
+        for (key, val) in RUBBISH.items():
+            for word in val:
+                if result in val:
+                    self.type = key
+                    print('Rubbish_type={}'.format(self.type))
+        self.soundplayer.say('I will go to throw the rubbish.')
+        self.navigator.goto(self.type)
+        self.catch()
+
+    def catch(self):
+        print('Throwing the rubbish...')
+        rospy.sleep(3)
+        self.soundplayer.say('I have thrown the rubbish.')
+        self.soundplayer.say('I will go back to the room.')
 
 
 if __name__ == '__main__':

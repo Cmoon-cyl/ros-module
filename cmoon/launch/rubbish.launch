@@ -1,0 +1,6 @@
+<launch>
+    <!-- information -->
+    <node pkg="cmoon" type="controller.py" name='controller' output="screen"/>
+    <node pkg="cmoon" type="kinect.py" name="ros2yolo" output="screen" respawn="true"/>
+    <node pkg="cmoon" type="detector.py" name="yolo2ros" output="screen"/>
+</launch>

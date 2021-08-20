@@ -1,8 +1,8 @@
 <!--Created by Cmoon-->
 <launch>
     <!-- information -->
-    <include file="$(find azure_kinect_ros_driver)/launch/rectify_test.launch"/>
+<!--    <include file="$(find azure_kinect_ros_driver)/launch/rectify_test.launch"/>-->
     <node pkg="cmoon" type="kinect.py" name="ros2yolo" output="screen" respawn="true"/>
-    <node pkg="cmoon" type="final_yolo.py" name="yolo2ros" output="screen"/>
+    <node pkg="cmoon" type="detector.py" name="yolo2ros" output="screen"/>
 
 </launch>

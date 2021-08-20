@@ -47,7 +47,6 @@ class Detector:
         self.ros_image = np.frombuffer(image.data, dtype=np.uint8).reshape(image.height, image.width, -1)
 
     def send_img(self, msg):
-        rospy.loginfo('Cmd received.')
         with torch.no_grad():
             self.detect(self.ros_image)
 

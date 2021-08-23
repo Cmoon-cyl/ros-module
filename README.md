@@ -9,8 +9,17 @@ rosrun cmoon controller.py 可以实现语音加导航,捡垃圾任务实时检�
 roslaunch cmoon turtle_graph 可以乌龟画图  
   
 启动垃圾任务流程:  
-1.roslaunch cmoon rviz_monitu.launch(开启仿真)  
-2.roslaunch azure_kinect_ros_driver rectify_test.launch(需要连上azure kinect)  
-3.roslaunch riddle2019 riddle.launch(开启语音识别)  
-4.roslaunch cmoon rubbish.launch(主程序)  
+使用azure kinect:  
+1.kinect.py里订阅者订阅k4a,注释掉订阅usb_cam的那句话    
+2.roslaunch cmoon rviz_monitu.launch(开启仿真)  
+3.roslaunch azure_kinect_ros_driver rectify_test.launch(需要连上azure kinect)  
+4.roslaunch riddle2019 riddle.launch(开启语音识别)  
+5.roslaunch cmoon rubbish.launch(主程序)  
+  
+使用笔记本摄像头:  
+1.kinect.py里订阅者订阅usb_cam,注释掉订阅k4a的那句话    
+2.roslaunch cmoon rviz_monitu.launch(开启仿真)  
+3.rosrun usb_cam usb_cam_node(没有的sudo apt-get install ros-melolic-usb-cam)  
+4.roslaunch riddle2019 riddle.launch(开启语音识别)  
+5.roslaunch cmoon rubbish.launch(主程序)  
 

@@ -114,7 +114,7 @@ class Detector:
                 self.yolo_result.publish(s)
                 ros_image = im0[:, :, [2, 1, 0]]
                 path = os.path.dirname(os.path.dirname(__file__)) + '/pdf/'
-                savename = path+ 'rubbish' + str(self.rubbish_number) + '.jpg'
+                savename = path + 'rubbish' + str(self.rubbish_number) + '.jpg'
                 cv2.imwrite(savename, ros_image)
                 self.pdfmaker.write_img(savename)
 

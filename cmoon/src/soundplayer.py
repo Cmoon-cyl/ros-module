@@ -12,12 +12,14 @@ class Soundplayer:
         rospy.loginfo('Ready to play sound...')
 
     def say(self, string, delay=2):
+        """默认延迟2秒等话说完,可传入参数自定义等几秒"""
         rospy.sleep(1)
         self.soundhandle.stopAll()  # 停止其他在说的话,保证一次说一句
         self.soundhandle.say(string)  # 说传入的字符串
         rospy.sleep(delay)
 
     def play(self, string):
+        """0延迟模式"""
         rospy.sleep(1)
         self.soundhandle.stopAll()  # 停止其他在说的话,保证一次说一句
         self.soundhandle.say(string)  # 说传入的字符串

@@ -22,8 +22,8 @@ class Navigator:
     def goto(self, place):
         point = self.set_goal("map", self.location[place][0], self.location[place][1])  # 设置导航点
         self.go_to_location(point)
-        print('I have got the  ' + place)
-        self.soundplayer.say('I have got the  ' + place)
+        print('I have got the ' + place)
+        self.soundplayer.say('I have got the ' + place)
 
     def set_goal(self, name, position, orientation):
         """设置导航目标点的坐标和四元数"""
@@ -36,7 +36,7 @@ class Navigator:
         self.goal.target_pose.pose.orientation.y = orientation[1]
         self.goal.target_pose.pose.orientation.z = orientation[2]
         self.goal.target_pose.pose.orientation.w = orientation[3]
-        print('Goals set.')
+        print('Goal set.')
         return self.goal
 
     def go_to_location(self, location):

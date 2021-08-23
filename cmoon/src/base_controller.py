@@ -32,6 +32,6 @@ class Base:
 if __name__ == '__main__':
     try:
         rospy.init_node('base', anonymous=True)
-        Base('name')
+        Base()
     except rospy.ROSInterruptException:
         pass

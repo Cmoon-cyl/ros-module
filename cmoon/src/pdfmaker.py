@@ -19,7 +19,7 @@ class Pdfmaker:
             f.write('<h2>' + text + '</h2>')
         self.make_pdf()
 
-    def write_img(self,filename):
+    def write_img(self, filename):
         with open(self.pdfpath + '/test.html', 'a') as f:
             if '.jpg' in filename:
                 f.write('<img src="' + filename + '"><br>')

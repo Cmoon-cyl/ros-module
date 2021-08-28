@@ -23,9 +23,12 @@ roslaunch cmoon turtle_graph 可以乌龟画图
 4.roslaunch riddle2019 riddle.launch(开启语音识别)  
 5.roslaunch cmoon rubbish.launch(主程序)  
 
-乌龟画图例程:    
+乌龟画图例程:   
 1.roslaunch cmoon turtle_graph.launch  
 2.在终端根据提示输入要画的图形(squ,tri_60,tri_90,rec)  
 或者:  
 1.rosrun turtlesim turtlesim_node  
 2.rosrun cmoon turtle_graph.py squ(直接在语句后面跟上要画图形名称就行,不加的话在终端输入也行)
+转换成rviz仿真:  
+1.roslaunch cmoon rviz_graph.launch  
+2.在终端输入要画的图形(squ,tri_60,tri_90,rec)  

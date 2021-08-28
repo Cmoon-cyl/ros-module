@@ -28,7 +28,7 @@ roslaunch cmoon turtle_graph 可以乌龟画图
 2.在终端根据提示输入要画的图形(squ,tri_60,tri_90,rec)  
 或者:  
 1.rosrun turtlesim turtlesim_node  
-2.rosrun cmoon turtle_graph.py squ(直接在语句后面跟上要画图形名称就行,不加的话在终端输入也行)
+2.rosrun cmoon turtle_graph.py squ(直接在语句后面跟上要画图形名称就行,不加的话在终端输入也行)  
 转换成rviz仿真:  
 1.roslaunch cmoon rviz_graph.launch  
 2.在终端输入要画的图形(squ,tri_60,tri_90,rec)  

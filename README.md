@@ -32,3 +32,9 @@ roslaunch cmoon turtle_graph 可以乌龟画图
 转换成rviz仿真:  
 1.roslaunch cmoon rviz_graph.launch  
 2.在终端输入要画的图形(squ,tri_60,tri_90,rec)  
+
+使用骨架识别:
+1.将cmoon launch里的rectify_body.launch 放入azure kinect ros driver包  
+2.roslaunch azure_kinect_ros_driver rectify_body.launch
+3.roslaunch cmoon rviz_body.launch  
+4.roslaunch cmoon kinect2base.launch  

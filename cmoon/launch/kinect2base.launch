@@ -1,0 +1,7 @@
+<launch>
+    <!-- 发布kinect相对于底盘的坐标关系 -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="body_camera"
+
+          args="0 0 1 -1.570796327 0 -1.570796327 /map /depth_camera_link" output="screen"/>
+
+</launch>

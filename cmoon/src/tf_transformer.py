@@ -22,7 +22,7 @@ class Transformer:
     def kinect2map(self, point):
         self.transformed('kinect', 'map', point)
 
-    def dynamic_pub(self, father, child, point):
+    def pub(self, father, child, point):
         """发布动态变换的坐标系,父级坐标系,子级坐标系,和偏移量"""
         pub = tf2_ros.TransformBroadcaster()  # 创建发布坐标系相对关系的对象
         ts = TransformStamped()

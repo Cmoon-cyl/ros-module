@@ -7,6 +7,20 @@ roslaunch cmoon rviz_monitu.launch 启动仿真环境
 roslaunch cmoon  yolo2ros.launch yolo实时检测 (需要azure kinect ros 驱动并且插上上摄像头)  
 rosrun cmoon controller.py 可以实现语音加导航,捡垃圾任务实时检测前的所有功能  (需要先开riddle.launch)  
 roslaunch cmoon turtle_graph 可以乌龟画图  
+
+使用Detector：  
+1.依赖：sudo pip3 install baidu-aip  
+2.导入：from Detector import FaceDetector，BodyDetector  
+3.实例化：self.body=BodyDetector(),self.face=FaceDetector()  
+4.调用：result=self.body.detect(['age','gender','glasses',upper_wear'])传入要检测的特征，电脑摄像头拍照一次并检测，返回结果字典  
+result=self.body.get_attr('/home/cmoon/photo.jpg',['age','gender'])传入图片路径，要检测的特征，返回结果字典  
+face与body调用方法相同  
+
+重要更新：  
+为了使Python3的模块能够使用，现将controller默认py版本改为3，请将controller.py首行改为#!/usr/bin/env python3  
+另外，tf由于不支持python3，现取消base_controller调用tf模块，请替换base_controller.py重新编译。base模块功能依旧可以使用  
+若将controller的python版本改为python3报错rospkg，运行pip3 install rospkg  
+
   
 启动垃圾任务流程:  
 使用azure kinect:  
@@ -38,3 +52,5 @@ roslaunch cmoon turtle_graph 可以乌龟画图
 2.roslaunch azure_kinect_ros_driver rectify_body.launch  
 3.roslaunch cmoon rviz_body.launch  
 4.roslaunch cmoon kinect2base.launch  
+
+

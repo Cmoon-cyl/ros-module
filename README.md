@@ -11,12 +11,14 @@ roslaunch cmoon turtle_graph 可以乌龟画图
 使用Detector：  
 1.依赖:pip3 install baidu-aip  
  pip3 install pyk4a  
-2.导入：from Detector import FaceDetector，BodyDetector  
-3.实例化：self.body=BodyDetector(),self.face=FaceDetector()  
+2.导入：from Detector import FaceDetector，BodyDetector,ObjectDetector  
+3.实例化：self.body=BodyDetector(),self.face=FaceDetector(),self.yolo=ObjectDetector()  
 4.调用：result=self.body.detect(['age','gender','glasses',upper_wear'],device='k4a')传入要检测的特征及设备。设备参数不传默认电脑摄像头，传入k4a使用kinect。摄像头拍照一次并检测，返回结果字典  
 result=self.body.get_attr('/home/cmoon/photo.jpg',['age','gender'])传入图片路径，要检测的特征，返回结果字典  
 face与body调用方法相同  
-
+self.yolo.detect(device='k4a')传入参数k4a使用kinect检测，不传默认电脑摄像头，返回数组，包含所监测到的物品  
+self.yolo.real_time()开启实时检测，可作为测试，传入k4a则使用kinect实时检测  
+  
 重要更新：  
 为了使Python3的模块能够使用，现将controller默认py版本改为3，请将controller.py首行改为#!/usr/bin/env python3  
 另外，tf由于不支持python3，现取消base_controller调用tf模块，请替换base_controller.py重新编译。base模块功能依旧可以使用  

@@ -11,6 +11,7 @@ roslaunch cmoon turtle_graph 可以乌龟画图
 使用Detector：  
 1.依赖:pip3 install baidu-aip  
  pip3 install pyk4a  
+ ObjectDetector要更改pt模型的路径  
 2.导入：from Detector import FaceDetector，BodyDetector,ObjectDetector  
 3.实例化：self.body=BodyDetector(),self.face=FaceDetector(),self.yolo=ObjectDetector()  
 4.调用：result=self.body.detect(['age','gender','glasses',upper_wear'],device='k4a')传入要检测的特征及设备。设备参数不传默认电脑摄像头，传入k4a使用kinect。摄像头拍照一次并检测，返回结果字典  

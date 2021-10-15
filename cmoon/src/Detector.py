@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # coding: UTF-8
 # Created by Cmoon
 
@@ -12,13 +12,14 @@ import torch
 from models.experimental import attempt_load
 from utils.general import non_max_suppression, scale_coords, xyxy2xywh
 from utils.augmentations import letterbox
-from utils.plots import plot_one_box, colors
+from utils.plots import Annotator, colors
 from pyKinectAzure import pyKinectAzure, _k4a
 
 
 class Detector(object):
     def __init__(self):
         self.photopath = os.path.dirname(os.path.dirname(__file__)) + '/photo'
+        self.weights = r'/home/cmoon/workingspace/src/cmoon/src/weights/yolov5s6.pt'
 
     def get_file_content(self, filePath):
         with open(filePath, 'rb') as fp:
@@ -48,7 +49,7 @@ class Detector(object):
             self.k4a.device_stop_cameras()
             self.k4a.device_close()
         else:
-            cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+            cap = cv2.VideoCapture(2, cv2.CAP_DSHOW)
             cap.open(0)
             flag, frame = cap.read()
             path = self.photopath + '/photo.jpg'
@@ -59,7 +60,7 @@ class Detector(object):
     def get_attr(self, *key):
         return
 
-    def detect(self, attributes=None, device='camera', *keys):
+    def detect(self, attributes=None, device='camera', mode=None, *keys):
         """电脑摄像头拍照检测"""
         path = self.take_photo(device)
         print(path)
@@ -148,9 +149,10 @@ class FaceDetector(Detector):
 
 class ObjectDetector(Detector):
     def __init__(self):
+        self.photopath = os.path.dirname(os.path.dirname(__file__)) + '/photo'
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        print(self.device)
         self.half = self.device != 'cpu'
-        self.weights = r'/home/cmoon/workingspace/src/cmoon/src/weights/yolov5s.pt'
         self.imgsz = 640
         self.conf_thres = 0.4
         self.iou_thres = 0.05
@@ -184,135 +186,69 @@ class ObjectDetector(Detector):
                 torch.zeros(1, 3, self.imgsz, self.imgsz).to(self.device).type_as(next(model.parameters())))  # run once
         return model
 
-    def real_time(self, device='camera'):
-        model = self.load_model()
+    def process_img(self, stride0, img0):
+        img = letterbox(img0, self.imgsz, stride=stride0, auto=True)[0]
+        # img = letterbox(img0, self.imgsz, stride=stride)[0]
+        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+        img = np.ascontiguousarray(img)
+
+        img = torch.from_numpy(img).to(self.device)
+        img = img.half() if self.half else img.float()  # uint8 to fp16/32
+        img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        if len(img.shape) == 3:
+            img = img[None]  # expand for batch dim
+        return img
+
+    def pred(self, model, img0):
         stride = int(model.stride.max())
         names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+        img = self.process_img(stride, img0)
+        pred = model(img, augment=False, visualize=False)[0]
+        pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, agnostic=False)
+        result = []
+        name = []
+        for i, det in enumerate(pred):
+            s = ''
+            s += '%gx%g ' % img.shape[2:]  # print string
+            gn = torch.tensor(img0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            annotator = Annotator(img0, line_width=3, example=str(names))
+            if len(det):
+                # Rescale boxes from img_size to im0 size
+                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
+                for c in det[:, -1].unique():
+                    n = (det[:, -1] == c).sum()  # detections per class
+                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-        if device == 'k4a' or device == 'kinect':
-            self.modulePath = r'/usr/lib/x86_64-linux-gnu/libk4a.so'
-            self.k4a = pyKinectAzure(self.modulePath)
-            self.k4a.device_open()
-            device_config = self.k4a.config
-            device_config.color_resolution = _k4a.K4A_COLOR_RESOLUTION_1080P
-            print('Kinect opened!')
-            self.k4a.device_start_cameras(device_config)
+                for *xyxy, conf, cls in reversed(det):
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    line = (cls, *xywh)  # label format
+                    aim = ('%g ' * len(line)).rstrip() % line
+                    aim = aim.split(' ')
+                    c = int(cls)
+                    label = (f'{names[c]} {conf:.2f}')
+                    annotator.box_label(xyxy, label, color=colors(c, True))
+                    result.append(aim)
+            if len(result):
+                for classes in result:
+                    name.append(self.list[int(classes[0])])
+            img0 = annotator.result()
+            return name, result
 
-            while True:
-                self.k4a.device_get_capture()
-                color_image_handle = self.k4a.capture_get_color_image()
-                if color_image_handle:
-                    img0 = self.k4a.image_convert_to_numpy(color_image_handle)
-                    img = letterbox(img0, self.imgsz, stride=stride)[0]
-                    img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-                    img = np.ascontiguousarray(img)
-
-                    img = torch.from_numpy(img).to(self.device)
-                    img = img.half() if self.half else img.float()  # uint8 to fp16/32
-                    img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                    if len(img.shape) == 3:
-                        img = img[None]  # expand for batch dim
-                    pred = model(img, augment=False, visualize=False)[0]
-                    pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, agnostic=False)
-                    result = []
-                    for i, det in enumerate(pred):
-                        s = ''
-                        s += '%gx%g ' % img.shape[2:]  # print string
-                        gn = torch.tensor(img0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                        if len(det):
-                            # Rescale boxes from img_size to im0 size
-                            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
-                            for c in det[:, -1].unique():
-                                n = (det[:, -1] == c).sum()  # detections per class
-                                s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
-                            for *xyxy, conf, cls in reversed(det):
-                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(
-                                    -1).tolist()  # normalized xywh
-                                line = (cls, *xywh)  # label format
-                                aim = ('%g ' * len(line)).rstrip() % line
-                                aim = aim.split(' ')
-                                print(aim)
-                                c = int(cls)
-                                label = (f'{names[c]} {conf:.2f}')
-                                img0 = plot_one_box(xyxy, img0, label=label, color=colors(c, True), line_width=3)
-                                result.append(aim)
-                        if len(result):
-                            for i, det in enumerate(result):
-                                _, x_center, y_center, width, height = det
-                                x_center, width = 1 * float(x_center), 1 * float(width)
-                                y_center, height = 1 * float(y_center), 1 * float(height)
-                                top_left = (int(x_center - width / 2.0), int(y_center - height / 2.0))
-                                bottom_right = (int(x_center + width / 2.0), int(y_center + height / 2.0))
-                                # color = (0, 255, 0)
-                                # cv2.rectangle(img0, top_left, bottom_right, color, thickness=5)
-
-                    cv2.namedWindow('yolo', cv2.WINDOW_NORMAL)
-                    cv2.resizeWindow('yolo', 1080, 720)
-                    cv2.imshow('yolo', img0)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
-
-            self.k4a.device_stop_cameras()
-            self.k4a.device_close()
+    def judge(self, mode, name=None, attributes=None):
+        if mode == 'realtime':
+            print(name)
+            flag = cv2.waitKey(1) & 0xFF == ord('q')
+        elif mode == 'find':
+            flag = cv2.waitKey(1) and attributes in name
         else:
-            cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-            cap.open(0)
-            while cap.isOpened():
-                flag, img0 = cap.read()
-                img = letterbox(img0, self.imgsz, stride=stride)[0]
-                img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-                img = np.ascontiguousarray(img)
-                img = torch.from_numpy(img).to(self.device)
-                img = img.half() if self.half else img.float()  # uint8 to fp16/32
-                img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                if len(img.shape) == 3:
-                    img = img[None]  # expand for batch dim
-                pred = model(img, augment=False, visualize=False)[0]
-                pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, agnostic=False)
-                result = []
-                for i, det in enumerate(pred):
-                    s = ''
-                    s += '%gx%g ' % img.shape[2:]  # print string
-                    gn = torch.tensor(img0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                    if len(det):
-                        # Rescale boxes from img_size to im0 size
-                        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
-                        for c in det[:, -1].unique():
-                            n = (det[:, -1] == c).sum()  # detections per class
-                            s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+            flag = cv2.waitKey(1) and name != []
+        return flag
 
-                        for *xyxy, conf, cls in reversed(det):
-                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                            line = (cls, *xywh)  # label format
-                            aim = ('%g ' * len(line)).rstrip() % line
-                            aim = aim.split(' ')
-                            print(aim)
-                            c = int(cls)
-                            label = (f'{names[c]} {conf:.2f}')
-                            img0 = plot_one_box(xyxy, img0, label=label, color=colors(c, True), line_width=3)
-                            result.append(aim)
-                    if len(result):
-                        for i, det in enumerate(result):
-                            _, x_center, y_center, width, height = det
-                            x_center, width = 640 * float(x_center), 640 * float(width)
-                            y_center, height = 640 * float(y_center), 640 * float(height)
-                            top_left = (int(x_center - width / 2.0), int(y_center - height / 2.0))
-                            bottom_right = (int(x_center + width / 2.0), int(y_center + height / 2.0))
-                            color = (0, 255, 0)
-
-                cv2.namedWindow('yolo', cv2.WINDOW_NORMAL)
-                cv2.resizeWindow('yolo', 640, 640)
-                cv2.imshow('yolo', img0)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            cap.release()
-
-    def detect(self, attributes=None, device='camera', *keys):
+    def detect(self, attributes=None, device='camera', mode='realtime', *keys):
+        if attributes is not None:
+            mode = 'find'
         model = self.load_model()
-        stride = int(model.stride.max())
-        names = model.module.names if hasattr(model, 'module') else model.names  # get class names
-        yolo = []
+        name = []
         if device == 'k4a' or device == 'kinect':
             self.modulePath = r'/usr/lib/x86_64-linux-gnu/libk4a.so'
             self.k4a = pyKinectAzure(self.modulePath)
@@ -326,131 +262,50 @@ class ObjectDetector(Detector):
                 color_image_handle = self.k4a.capture_get_color_image()
                 if color_image_handle:
                     img0 = self.k4a.image_convert_to_numpy(color_image_handle)
-                    img = letterbox(img0, self.imgsz, stride=stride)[0]
-                    img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-                    img = np.ascontiguousarray(img)
-
-                    img = torch.from_numpy(img).to(self.device)
-                    img = img.half() if self.half else img.float()  # uint8 to fp16/32
-                    img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                    if len(img.shape) == 3:
-                        img = img[None]  # expand for batch dim
-                    pred = model(img, augment=False, visualize=False)[0]
-                    pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, agnostic=False)
-                    result = []
-                    for i, det in enumerate(pred):
-                        s = ''
-                        s += '%gx%g ' % img.shape[2:]  # print string
-                        gn = torch.tensor(img0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                        if len(det):
-                            # Rescale boxes from img_size to im0 size
-                            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
-                            for c in det[:, -1].unique():
-                                n = (det[:, -1] == c).sum()  # detections per class
-                                s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
-                            for *xyxy, conf, cls in reversed(det):
-                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(
-                                    -1).tolist()  # normalized xywh
-                                line = (cls, *xywh)  # label format
-                                aim = ('%g ' * len(line)).rstrip() % line
-                                aim = aim.split(' ')
-                                # print(aim)
-                                c = int(cls)
-                                label = (f'{names[c]} {conf:.2f}')
-                                img0 = plot_one_box(xyxy, img0, label=label, color=colors(c, True), line_width=3)
-                                result.append(aim)
-                        if len(result):
-                            print(result)
-                            for classes in result:
-                                yolo.append(self.list[int(classes[0])])
+                    name, result = self.pred(model, img0)
                     cv2.namedWindow('yolo', cv2.WINDOW_NORMAL)
-                    cv2.resizeWindow('yolo', 1080, 720)
+                    cv2.resizeWindow('yolo', 1280, 720)
                     cv2.imshow('yolo', img0)
-                    if yolo != []:
+                    if self.judge(mode, name, attributes):
                         break
 
             self.k4a.device_stop_cameras()
             self.k4a.device_close()
-        else:
-            model = self.load_model()
-            stride = int(model.stride.max())
-            names = model.module.names if hasattr(model, 'module') else model.names  # get class names
 
+        else:
             cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             cap.open(0)
-
             while cap.isOpened():
                 flag, img0 = cap.read()
-
-                img = letterbox(img0, self.imgsz, stride=stride)[0]
-                img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-                img = np.ascontiguousarray(img)
-
-                img = torch.from_numpy(img).to(self.device)
-                img = img.half() if self.half else img.float()  # uint8 to fp16/32
-                img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                if len(img.shape) == 3:
-                    img = img[None]  # expand for batch dim
-                pred = model(img, augment=False, visualize=False)[0]
-                pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, agnostic=False)
-                result = []
-                for i, det in enumerate(pred):
-                    s = ''
-                    s += '%gx%g ' % img.shape[2:]  # print string
-                    gn = torch.tensor(img0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                    if len(det):
-                        # Rescale boxes from img_size to im0 size
-                        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
-                        for c in det[:, -1].unique():
-                            n = (det[:, -1] == c).sum()  # detections per class
-                            s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
-                        for *xyxy, conf, cls in reversed(det):
-                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                            line = (cls, *xywh)  # label format
-                            aim = ('%g ' * len(line)).rstrip() % line
-                            aim = aim.split(' ')
-                            c = int(cls)
-                            label = (f'{names[c]} {conf:.2f}')
-                            img0 = plot_one_box(xyxy, img0, label=label, color=colors(c, True), line_width=3)
-                            result.append(aim)
-                    if len(result):
-                        print(result)
-                        for classes in result:
-                            yolo.append(self.list[int(classes[0])])
+                name, result = self.pred(model, img0)
+                # print(name)
                 cv2.namedWindow('yolo', cv2.WINDOW_NORMAL)
                 cv2.resizeWindow('yolo', 640, 640)
                 cv2.imshow('yolo', img0)
-                if yolo != []:
+                if self.judge(mode, name, attributes):
                     break
+
             cap.release()
-        return yolo
+        return name
 
 
 if __name__ == '__main__':
     try:
         rospy.init_node('name', anonymous=True)
 
-        # k4a = BodyDetector()
-        # result = k4a.detect(['age', 'gender', 'glasses'])
-        # print(result)
-        #
         # face = FaceDetector()
-        # result1 = face.detect(attributes=['age', 'gender', 'glasses', 'beauty', 'mask'], device='kinect')
-        #
+        # result1 = face.detect(attributes=['age', 'gender', 'glasses', 'beauty', 'mask'], device='cam')
+        # print(result1)
+
         # body = BodyDetector()
         # result2 = body.detect(
         #     ['age', 'gender', 'upper_wear', 'upper_wear_texture', 'upper_wear_fg', 'upper_color',
-        #      'lower_wear', 'lower_color', 'face_mask', 'glasses', 'headwear', 'bag'], device='k4a')
-        #
-        # print(result1)
+        #      'lower_wear', 'lower_color', 'face_mask', 'glasses', 'headwear', 'bag'], device='cam')
         # print(result2)
 
         yolo = ObjectDetector()
-        # yolo.real_time(device='k4a')
-        result = yolo.detect(device='k4a')
-        print(result)
-        # rospy.spin()
+        name = yolo.detect(device='k4a', mode='realtime', attributes='laptop')
+        print('name:{}'.format(name))
+
     except rospy.ROSInterruptException:
         pass

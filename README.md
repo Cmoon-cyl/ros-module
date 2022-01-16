@@ -26,6 +26,12 @@ self.yolo.detect(device='k4a',mode='realtime',attributes='bottle')device参数�
 
   
 启动垃圾任务流程:  
+新版：
+1.roslaunch cmoon rviz_monitu.launch(开启仿真)  
+2.roslaunch riddle2019 riddle.launch(语音识别)  
+3.rosrun cmoon controller1.py  
+
+旧版：  
 使用azure kinect:  
 1.kinect.py里订阅者订阅k4a,注释掉订阅usb_cam的那句话    
 2.roslaunch cmoon rviz_monitu.launch(开启仿真)  

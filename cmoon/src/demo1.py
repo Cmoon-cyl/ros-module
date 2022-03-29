@@ -12,16 +12,19 @@ class Tester:
         self.base = Base()
         self.yolo = ObjectDetector()
         self.list = []
-        self.threshold = 5  # 判断是否舍去的阈值
+        self.threshold = 10  # 判断是否舍去的阈值,需要调整
 
     def run(self):
         """
+        resolution是相机分辨率
+        rotate是底盘旋转速度
         range是占画面中间区域百分之多少
         返回的self.result是列表,里面存的是类,有name,box,x,y四个属性
         name是检测到的物品名,box是bounding box的xyxy,x和y是中心点坐标
         """
         while not rospy.is_shutdown():
-            self.result = self.yolo.detect(device='cam', mode='detect', depth=False, rotate=True, range=0.5)
+            self.result = self.yolo.detect(device='cam', mode='detect', depth=False, resolution=640, rotate=1.0,
+                                           range=0.5)
             for object in self.result:
                 print(object)
                 if len(self.list):

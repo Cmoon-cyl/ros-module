@@ -64,7 +64,7 @@ class Controller:
         """启动yolo实时检测"""
         self.soundplayer.say('Starting to track the rubbish.')
         self.result = None  # 检测前初始化检测结果
-        self.result = self.yolo.detect(device='cam', mode='detect', depth=False, rotate=True,resolution=640,range=0.5)
+        self.result = self.yolo.detect(device='cam', mode='detect', depth=False, rotate=1.0, resolution=640, range=0.5)
         self.judge(self.result[0].name)
 
     def judge(self, result):

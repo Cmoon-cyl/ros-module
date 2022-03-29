@@ -306,7 +306,7 @@ class ObjectDetector(Detector):
             self.k4a.device_start_cameras(device_config)
             while True:
                 if rotate:
-                    self.base.rotate(1.0)
+                    self.base.rotate(rotate)
                 self.k4a.device_get_capture()
                 color_image_handle = self.k4a.capture_get_color_image()
                 depth_image_handle = self.k4a.capture_get_depth_image()
@@ -357,7 +357,7 @@ class ObjectDetector(Detector):
             while cap.isOpened():
                 if rotate:
                     # print('rotating')
-                    self.base.rotate(1.0)
+                    self.base.rotate(rotate)
                     # rate.sleep()
                 flag, img0 = cap.read()
                 name, result = self.pred(model, img0)

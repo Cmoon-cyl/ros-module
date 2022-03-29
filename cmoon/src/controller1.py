@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# coding: UTF-8 
+# coding: UTF-8
 # Created by Cmoon
 
 import rospy
@@ -64,8 +64,8 @@ class Controller:
         """启动yolo实时检测"""
         self.soundplayer.say('Starting to track the rubbish.')
         self.result = None  # 检测前初始化检测结果
-        self.result,location = self.yolo.detect(device='cam', mode='detect', depth=False, rotate=True)
-        self.judge(self.result[0])
+        self.result = self.yolo.detect(device='cam', mode='detect', depth=False, rotate=True,resolution=640,range=0.5)
+        self.judge(self.result[0].name)
 
     def judge(self, result):
         """判断检测到的垃圾种类"""
@@ -76,7 +76,7 @@ class Controller:
 
     def catch(self):
         """抓取垃圾部分"""
-        self.soundplayer.say('Please hand me the ' + self.result[0], 3)
+        self.soundplayer.say('Please hand me the ' + self.result[0].name, 3)
         self.soundplayer.say('I have caught the rubbish.')
 
     def throw(self):

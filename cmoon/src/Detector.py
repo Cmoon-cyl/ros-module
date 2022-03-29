@@ -166,8 +166,8 @@ class ObjectDetector(Detector):
         self.K = np.linalg.inv(self.K)
         self.conf_thres = 0.4
         self.iou_thres = 0.05
-        self.classes = [39,41,64,67]
-        #self.classes = None
+        self.classes = [39, 41, 64, 67]
+        # self.classes = None
         self.list = None
         self.show = rospy.Publisher('/yolo_result', Point, queue_size=10)
         self.point = Point()
@@ -175,7 +175,7 @@ class ObjectDetector(Detector):
 
     def load_model(self):
         model = attempt_load(self.weights, map_location=self.device)  # load FP32 model
-        #stride = int(model.stride.max())  # model stride
+        # stride = int(model.stride.max())  # model stride
         self.list = model.module.names if hasattr(model, 'module') else model.names  # get class names
         if self.half:
             model.half()  # to FP16
@@ -266,22 +266,36 @@ class ObjectDetector(Detector):
 
         return target_coorindate
 
-    def judge(self, mode, name=None, find=None):
+    def xyxy2mid(self, xyxy):
+        center = []
+        for point in xyxy:
+            # print(f'xyxy:{point}')
+            center.append([(point[0] + point[2]) / 2, (point[1] + point[3]) / 2])
+        return center
+
+    def judge_range(self, x, resolution=640, range=0.5):
+        left = resolution * 0.5 * (1 - range)
+        right = resolution * 0.5 * (1 + range)
+        return left <= x <= right
+
+    def judge(self, mode, name=None, find=None, center=None, resolution=640, range=0.5):
+        x = center[0][0] if center else None
         if mode == 'realtime':
             flag = cv2.waitKey(1) & 0xFF == ord('q')
         elif mode == 'find':
-            flag = cv2.waitKey(1) and find in name
+            flag = cv2.waitKey(1) and find in name and self.judge_range(x, resolution, range)
         else:
-            flag = cv2.waitKey(1) and name != []
-            print('Detcet complete.')
+            flag = cv2.waitKey(1) and name != [] and self.judge_range(x, resolution, range)
         return flag
 
-    def detect(self, find=None, device='camera', mode='realtime', depth=False, rotate=False, save=True,*keys):
+    def detect(self, find=None, device='camera', mode='realtime', depth=False, rotate=False, save=True, resolution=640,
+               range=0.5, *keys):
         if find is not None:
             mode = 'find'
         model = self.load_model()
         name = []
         result = []
+        output = []
         if device == 'k4a' or device == 'kinect':
             self.modulePath = r'/usr/lib/x86_64-linux-gnu/libk4a.so'
             self.k4a = pyKinectAzure(self.modulePath)
@@ -300,21 +314,35 @@ class ObjectDetector(Detector):
                 if color_image_handle:
                     img0 = self.k4a.image_convert_to_numpy(color_image_handle)
                     name, result = self.pred(model, img0)
+                    center = self.xyxy2mid(result)
                     # print(result)
                     cv2.namedWindow('yolo', cv2.WINDOW_NORMAL)
                     cv2.resizeWindow('yolo', 1280, 720)
+                    cv2.line(img0, (int(resolution * 0.5 * (1 - range)), 0), (int(resolution * 0.5 * (1 - range)), 480),
+                             (0, 255, 0),
+                             2, 4)
+                    cv2.line(img0, (int(resolution * 0.5 * (1 + range)), 0), (int(resolution * 0.5 * (1 + range)), 480),
+                             (0, 255, 0),
+                             2, 4)
+                    for point in center:
+                        cv2.circle(img0, (int(point[0]), int(point[1])), 1, (0, 0, 255), 8)
                     cv2.imshow('yolo', img0)
-                    if self.judge(mode, name, find):
+                    if self.judge(mode, name, find, center, resolution, range):
                         if save:
                             cv2.imwrite(self.photopath + '/result.jpg', img0)
+                        for item in zip(name, result, center):
+                            if self.judge_range(item[2][0], resolution, range):
+                                point = YoloResult(item[0], item[1], item[2][0], item[2][1])
+                                # print(point)
+                                output.append(point)
                         break
                     if depth_image_handle and name != list() and depth is True:
                         depth_color_image = self.k4a.transform_depth_to_color(depth_image_handle, color_image_handle)
 
                         result = self.transform_(zip(name, result), depth_color_image)
 
-                        print("result:", result)
-                print("result:", result)
+                        #print("result:", result)
+                # print("result:", result)
 
             if rotate:
                 self.base.stop()
@@ -325,27 +353,49 @@ class ObjectDetector(Detector):
         else:
             cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             cap.open(0)
-            #rate = rospy.Rate(2000)
+            # rate = rospy.Rate(2000)
             while cap.isOpened():
                 if rotate:
-                    #print('rotating')
+                    # print('rotating')
                     self.base.rotate(1.0)
-                    #rate.sleep()
+                    # rate.sleep()
                 flag, img0 = cap.read()
                 name, result = self.pred(model, img0)
-                # print(name)
+                center = self.xyxy2mid(result)
                 cv2.namedWindow('yolo', cv2.WINDOW_NORMAL)
                 cv2.resizeWindow('yolo', 640, 640)
+                cv2.line(img0, (int(resolution * 0.5 * (1 - range)), 0), (int(resolution * 0.5 * (1 - range)), 480),
+                         (0, 255, 0), 2, 4)
+                cv2.line(img0, (int(resolution * 0.5 * (1 + range)), 0), (int(resolution * 0.5 * (1 + range)), 480),
+                         (0, 255, 0), 2, 4)
+                for point in center:
+                    cv2.circle(img0, (int(point[0]), int(point[1])), 1, (0, 0, 255), 8)
                 cv2.imshow('yolo', img0)
-                if self.judge(mode, name, find):
+                if self.judge(mode, name, find, center, resolution, range):
                     if save:
                         cv2.imwrite(self.photopath + '/result.jpg', img0)
+                    for item in zip(name, result, center):
+                        if self.judge_range(item[2][0], resolution, range):
+                            point = YoloResult(item[0], item[1], item[2][0], item[2][1])
+                            # print(point)
+                            output.append(point)
                     break
-                print("result:", result)
+                # print("result:", result)
             if rotate:
                 self.base.stop()
             cap.release()
-        return name, result
+        return output
+
+
+class YoloResult:
+    def __init__(self, name, box, x, y):
+        self.name = name
+        self.box = box
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return f'name:{self.name},box:{self.box},x:{self.x},y:{self.y}'
 
 
 if __name__ == '__main__':

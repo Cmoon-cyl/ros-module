@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: UTF-8 
 
 import rospy
@@ -13,6 +13,9 @@ class Tester:
         self.yolo = ObjectDetector()
         self.list = []
         self.threshold = 10  # 判断是否舍去的阈值,需要调整
+        self.resolution = 640  # 相机分辨率
+        self.range = 0.5  # 物体出现在画面中的范围(50%)
+        self.rotate = 1.0  # 底盘旋转速度
 
     def run(self):
         """
@@ -23,8 +26,9 @@ class Tester:
         name是检测到的物品名,box是bounding box的xyxy,x和y是中心点坐标
         """
         while not rospy.is_shutdown():
-            self.result = self.yolo.detect(device='cam', mode='detect', depth=False, resolution=640, rotate=1.0,
-                                           range=0.5)
+            self.result = self.yolo.detect(device='cam', mode='detect', depth=False,
+                                           rotate=self.rotate, range=self.range)
+
             for object in self.result:
                 print(object)
                 if len(self.list):

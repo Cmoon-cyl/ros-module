@@ -15,7 +15,7 @@ from utils.augmentations import letterbox
 from utils.plots import Annotator, colors
 from utils.torch_utils import time_sync
 from pyKinectAzure import pyKinectAzure, _k4a
-from cmoon_msgs.msg import Point
+#from cmoon_msgs.msg import Point
 from base_controller import Base
 
 
@@ -169,8 +169,8 @@ class ObjectDetector(Detector):
         self.classes = [39, 41, 64, 67]
         # self.classes = None
         self.list = None
-        self.show = rospy.Publisher('/yolo_result', Point, queue_size=10)
-        self.point = Point()
+        #self.show = rospy.Publisher('/yolo_result', Point, queue_size=10)
+        #self.point = Point()
         super().__init__()
 
     def load_model(self):
@@ -240,31 +240,31 @@ class ObjectDetector(Detector):
             print('time:{:.3f}'.format(self.t2 - self.t1))
             return name, result
 
-    def transform_(self, n_coorindate_cls, depth_to_color_image):
-        target_coorindate = list()  # 存放目标点三维坐标 二维列表
-        for name, coorindate_cls in n_coorindate_cls:
-            # print("coor:",coorindate_cls)
-            x1, y1, x2, y2 = coorindate_cls[0], coorindate_cls[1], coorindate_cls[2], coorindate_cls[3]
-            center_x = round((x2 - x1) / 2 + x1)
-            center_y = round((y2 - y1) / 2 + y1)
-            # target_coorindate = list()  # 存放目标点三维坐标 二维列表
-            # print("coor:%s,%s" % (center_x, center_y))
-            dep = depth_to_color_image[center_y][center_x].item()
-            if (dep >= 100):  # 大于10cmv
-                # image_coorindate = np.array([center_x, center_y , dep // 2]).reshape(3, 1)  # 图像坐标
-                image_coorindate = np.array([center_x * dep, center_y * dep, dep]).reshape(3, 1)  # 图像坐标
-                camera_coorindate = np.dot(self.K, image_coorindate)  # 相机坐标
-                target_coorindate.append([name, camera_coorindate[0].item() / 1000,
-                                          camera_coorindate[1].item() / 1000,
-                                          camera_coorindate[2].item() / 1000,
-                                          ])
-                self.point.result = name
-                self.point.x = camera_coorindate[0].item() / 1000
-                self.point.y = camera_coorindate[1].item() / 1000
-                self.point.z = camera_coorindate[2].item() / 1000
-                self.show.publish(self.point)
+    # def transform_(self, n_coorindate_cls, depth_to_color_image):
+    #     target_coorindate = list()  # 存放目标点三维坐标 二维列表
+    #     for name, coorindate_cls in n_coorindate_cls:
+    #         # print("coor:",coorindate_cls)
+    #         x1, y1, x2, y2 = coorindate_cls[0], coorindate_cls[1], coorindate_cls[2], coorindate_cls[3]
+    #         center_x = round((x2 - x1) / 2 + x1)
+    #         center_y = round((y2 - y1) / 2 + y1)
+    #         # target_coorindate = list()  # 存放目标点三维坐标 二维列表
+    #         # print("coor:%s,%s" % (center_x, center_y))
+    #         dep = depth_to_color_image[center_y][center_x].item()
+    #         if (dep >= 100):  # 大于10cmv
+    #             # image_coorindate = np.array([center_x, center_y , dep // 2]).reshape(3, 1)  # 图像坐标
+    #             image_coorindate = np.array([center_x * dep, center_y * dep, dep]).reshape(3, 1)  # 图像坐标
+    #             camera_coorindate = np.dot(self.K, image_coorindate)  # 相机坐标
+    #             target_coorindate.append([name, camera_coorindate[0].item() / 1000,
+    #                                       camera_coorindate[1].item() / 1000,
+    #                                       camera_coorindate[2].item() / 1000,
+    #                                       ])
+    #             self.point.result = name
+    #             self.point.x = camera_coorindate[0].item() / 1000
+    #             self.point.y = camera_coorindate[1].item() / 1000
+    #             self.point.z = camera_coorindate[2].item() / 1000
+    #             self.show.publish(self.point)
 
-        return target_coorindate
+        # return target_coorindate
 
     def xyxy2mid(self, xyxy):
         center = []
@@ -288,7 +288,7 @@ class ObjectDetector(Detector):
             flag = cv2.waitKey(1) and name != [] and self.judge_range(x, resolution, range)
         return flag
 
-    def detect(self, find=None, device='camera', mode='realtime', depth=False, rotate=False, save=True, resolution=640,
+    def detect(self, find=None, device='camera', mode='realtime', depth=False, rotate=False, save=True,
                range=0.5, *keys):
         if find is not None:
             mode = 'find'
@@ -310,6 +310,7 @@ class ObjectDetector(Detector):
                 self.k4a.device_get_capture()
                 color_image_handle = self.k4a.capture_get_color_image()
                 depth_image_handle = self.k4a.capture_get_depth_image()
+                resolution=self.k4a.image_get_width_pixels(color_image_handle)
 
                 if color_image_handle:
                     img0 = self.k4a.image_convert_to_numpy(color_image_handle)
@@ -339,9 +340,9 @@ class ObjectDetector(Detector):
                     if depth_image_handle and name != list() and depth is True:
                         depth_color_image = self.k4a.transform_depth_to_color(depth_image_handle, color_image_handle)
 
-                        result = self.transform_(zip(name, result), depth_color_image)
+                        #result = self.transform_(zip(name, result), depth_color_image)
 
-                        #print("result:", result)
+                        # print("result:", result)
                 # print("result:", result)
 
             if rotate:
@@ -353,6 +354,7 @@ class ObjectDetector(Detector):
         else:
             cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             cap.open(0)
+            resolution=640
             # rate = rospy.Rate(2000)
             while cap.isOpened():
                 if rotate:
@@ -393,6 +395,7 @@ class YoloResult:
         self.box = box
         self.x = x
         self.y = y
+        self.distance = None
 
     def __str__(self):
         return f'name:{self.name},box:{self.box},x:{self.x},y:{self.y}'

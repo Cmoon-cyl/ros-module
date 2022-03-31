@@ -3,11 +3,10 @@
 
 import rospy
 import tf2_ros
-from tf import transformations as tf
 from tf2_geometry_msgs import tf2_geometry_msgs
 from geometry_msgs.msg import TransformStamped, PointStamped
-from nav_msgs.msg import Odometry
 from cmoon_msgs.msg import Point, Pose
+import math
 
 
 class Transformer:
@@ -61,6 +60,12 @@ class Transformer:
             except Exception as e:
                 rospy.logwarn('TfError:%s', e)
         return [self.point_show.point.x, self.point_show.point.y, self.point_show.point.z]
+
+    def quad2euler(self, x, y, z, w):
+        X = math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y))
+        Y = math.asin(2 * (w * y - x * z))
+        Z = math.atan2(2 * (w * z + x * y), 1 - 2 * (z * z + y * y))
+        return Z
 
 
 if __name__ == '__main__':

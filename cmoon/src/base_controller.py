@@ -20,7 +20,7 @@ class Base:
         self.oz = 0.0
         self.ow = 0.0
         self.position = []  # 坐标
-        self.quaternion = []  # 四元数
+        self.orientation = []  # 四元数
         self.angle = 0  # 角度
         rospy.sleep(1)  # 等待获取现在位置的回调函数开始工作
 
@@ -34,7 +34,7 @@ class Base:
         self.oz = pose.pose.pose.orientation.z
         self.ow = pose.pose.pose.orientation.w
         self.position = [self.px, self.py, self.pz]
-        self.quaternion = [self.ox, self.oy, self.oz, self.ow]
+        self.orientation = [self.ox, self.oy, self.oz, self.ow]
         self.get_angle()
 
     def get_pose(self):
@@ -81,7 +81,7 @@ class Base:
 
     def rotate(self, speed):
         """旋转"""
-        # print('rotating')
+        print('rotating')
         self.twist.linear.x = 0
         self.twist.linear.y = 0
         self.twist.linear.z = 0

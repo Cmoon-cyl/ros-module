@@ -19,7 +19,7 @@ roslaunch cmoon turtle_graph 可以乌龟画图
 result=self.body.detect(['age','gender','glasses',upper_wear'],device='k4a')传入要检测的特征及设备。设备参数不传默认电脑摄像头，传入k4a使用kinect。摄像头拍照一次并检测，返回结果字典  
 result=self.body.get_attr('/home/cmoon/photo.jpg',['age','gender'])传入图片路径，要检测的特征，返回结果字典  
 face与body调用方法相同  
-物体检测：
+物体检测：  
 result = self.yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=False, range=0.5)
 device参数可选k4a或kinect来使用kinect相机，传cam或不传参数使用电脑摄像头.   
 mode参数可选realtime,开启实时检测,按q停止,不传参数默认检测到一次物品就停止检测.  

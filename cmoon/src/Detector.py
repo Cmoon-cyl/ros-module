@@ -15,13 +15,15 @@ from utils.augmentations import letterbox
 from utils.plots import Annotator, colors
 from utils.torch_utils import time_sync
 from pyKinectAzure import pyKinectAzure, _k4a
-#from cmoon_msgs.msg import Point
+# from cmoon_msgs.msg import Point
 from base_controller import Base
 
 
 class Detector(object):
     def __init__(self):
         self.weights = os.path.dirname(__file__) + '/weights/' + 'yolov5s6.pt'
+        #self.weights = '/home/cmoon/yolov5/weights/' + 'yolov5s6.pt'
+
         self.photopath = os.path.dirname(os.path.dirname(__file__)) + '/photo'
         self.base = Base()
 
@@ -166,11 +168,11 @@ class ObjectDetector(Detector):
         self.K = np.linalg.inv(self.K)
         self.conf_thres = 0.4
         self.iou_thres = 0.05
-        self.classes = [39, 41, 64, 67]
-        # self.classes = None
+        #self.classes = [39, 41, 64, 67]
+        self.classes = None
         self.list = None
-        #self.show = rospy.Publisher('/yolo_result', Point, queue_size=10)
-        #self.point = Point()
+        # self.show = rospy.Publisher('/yolo_result', Point, queue_size=10)
+        # self.point = Point()
         super().__init__()
 
     def load_model(self):
@@ -264,7 +266,7 @@ class ObjectDetector(Detector):
     #             self.point.z = camera_coorindate[2].item() / 1000
     #             self.show.publish(self.point)
 
-        # return target_coorindate
+    # return target_coorindate
 
     def xyxy2mid(self, xyxy):
         center = []
@@ -310,7 +312,7 @@ class ObjectDetector(Detector):
                 self.k4a.device_get_capture()
                 color_image_handle = self.k4a.capture_get_color_image()
                 depth_image_handle = self.k4a.capture_get_depth_image()
-                resolution=self.k4a.image_get_width_pixels(color_image_handle)
+                resolution = self.k4a.image_get_width_pixels(color_image_handle)
 
                 if color_image_handle:
                     img0 = self.k4a.image_convert_to_numpy(color_image_handle)
@@ -340,7 +342,7 @@ class ObjectDetector(Detector):
                     if depth_image_handle and name != list() and depth is True:
                         depth_color_image = self.k4a.transform_depth_to_color(depth_image_handle, color_image_handle)
 
-                        #result = self.transform_(zip(name, result), depth_color_image)
+                        # result = self.transform_(zip(name, result), depth_color_image)
 
                         # print("result:", result)
                 # print("result:", result)
@@ -354,7 +356,7 @@ class ObjectDetector(Detector):
         else:
             cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             cap.open(0)
-            resolution=640
+            resolution = 640
             # rate = rospy.Rate(2000)
             while cap.isOpened():
                 if rotate:
@@ -414,9 +416,9 @@ if __name__ == '__main__':
         #     ['age', 'gender', 'upper_wear', 'upper_wear_texture', 'upper_wear_fg', 'upper_color',
         #      'lower_wear', 'lower_color', 'face_mask', 'glasses', 'headwear', 'bag'], device='cam')
         # print(result2)
-
-        yolo = ObjectDetector()
-        name, result = yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=True)
+        #
+        # yolo = ObjectDetector()
+        # name, result = yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=True)
         # print(name[0])
         # print(result)
         # name = yolo.detect(device='k4a', mode='realtime', attributes=None, depth=True)

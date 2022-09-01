@@ -14,10 +14,20 @@ roslaunch cmoon turtle_graph 可以乌龟画图
  使用ObjectDetector要在最上面Detector类的初始化函数内更改pt模型的路径  
 2.导入：from Detector import FaceDetector，BodyDetector,ObjectDetector  
 3.实例化：self.body=BodyDetector(),self.face=FaceDetector(),self.yolo=ObjectDetector()  
-4.调用：result=self.body.detect(['age','gender','glasses',upper_wear'],device='k4a')传入要检测的特征及设备。设备参数不传默认电脑摄像头，传入k4a使用kinect。摄像头拍照一次并检测，返回结果字典  
+4.调用：  
+人脸及身体特征检测：  
+result=self.body.detect(['age','gender','glasses',upper_wear'],device='k4a')传入要检测的特征及设备。设备参数不传默认电脑摄像头，传入k4a使用kinect。摄像头拍照一次并检测，返回结果字典  
 result=self.body.get_attr('/home/cmoon/photo.jpg',['age','gender'])传入图片路径，要检测的特征，返回结果字典  
 face与body调用方法相同  
-self.yolo.detect(device='k4a',mode='realtime',attributes='bottle')device参数可选k4a或kinect,不传默认电脑摄像头. mode参数可选realtime,开启实时检测,按q停止,不传参数默认检测到一次物品就停止检测.attributes参数可传入能识别的一个物品名称字符串,可以一直检测到出现这样物品才停,不传则默认都检测,也可更改self.class来选择要检测哪些物品.  
+物体检测：
+result = self.yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=False, range=0.5)
+device参数可选k4a或kinect来使用kinect相机，传cam或不传参数使用电脑摄像头.   
+mode参数可选realtime,开启实时检测,按q停止,不传参数默认检测到一次物品就停止检测.  
+find参数可传入能识别的一个物品名称字符串,例如'bottle'，可以一直检测到出现bottle才停止,不传则默认都检测,也可更改self.class来选择要检测哪些物品.    
+depth可开启深度相机，返回物体深度值，准确度有待测试  
+rotate传入转速即可控制底盘开始旋转  
+range传入参数控制摄像头画面中多大范围内检测到的物体被计入  
+
   
 重要更新：  
 为了使Python3的模块能够使用，现将controller默认py版本改为3，请将controller.py首行改为#!/usr/bin/env python3  

@@ -290,7 +290,7 @@ class ObjectDetector(Detector):
             flag = cv2.waitKey(1) and name != [] and self.judge_range(x, resolution, range)
         return flag
 
-    def detect(self, find=None, device='camera', mode='realtime', depth=False, rotate=False, save=True,
+    def detect(self, find=None, device='camera', mode='realtime', depth=False, rotate=0.0, save=True,
                range=0.5, *keys):
         if find is not None:
             mode = 'find'
@@ -418,7 +418,7 @@ if __name__ == '__main__':
         # print(result2)
         #
         yolo = ObjectDetector()
-        result = yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=True, range=0.5)
+        result = yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=1.0, range=0.5)
         for object in result:
             print("name:{},box:{},x:{},y:{}".format(object.name, object.box, object.x, object.y))
 

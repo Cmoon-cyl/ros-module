@@ -20,7 +20,7 @@ result=self.body.detect(['age','gender','glasses',upper_wear'],device='k4a')传�
 result=self.body.get_attr('/home/cmoon/photo.jpg',['age','gender'])传入图片路径，要检测的特征，返回结果字典  
 face与body调用方法相同  
 物体检测：  
-result = self.yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=False, range=0.5)
+result = self.yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=False, range=0.5)  
 device参数可选k4a或kinect来使用kinect相机，传cam或不传参数使用电脑摄像头.   
 mode参数可选realtime,开启实时检测,按q停止,不传参数默认检测到一次物品就停止检测.  
 find参数可传入能识别的一个物品名称字符串,例如'bottle'，可以一直检测到出现bottle才停止,不传则默认都检测,也可更改self.class来选择要检测哪些物品.    

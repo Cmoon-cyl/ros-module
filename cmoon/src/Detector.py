@@ -22,7 +22,7 @@ from base_controller import Base
 class Detector(object):
     def __init__(self):
         self.weights = os.path.dirname(__file__) + '/weights/' + 'yolov5s6.pt'
-        #self.weights = '/home/cmoon/yolov5/weights/' + 'yolov5s6.pt'
+        # self.weights = '/home/cmoon/yolov5/weights/' + 'yolov5s6.pt'
 
         self.photopath = os.path.dirname(os.path.dirname(__file__)) + '/photo'
         self.base = Base()
@@ -168,7 +168,7 @@ class ObjectDetector(Detector):
         self.K = np.linalg.inv(self.K)
         self.conf_thres = 0.4
         self.iou_thres = 0.05
-        #self.classes = [39, 41, 64, 67]
+        # self.classes = [39, 41, 64, 67]
         self.classes = None
         self.list = None
         # self.show = rospy.Publisher('/yolo_result', Point, queue_size=10)
@@ -417,12 +417,10 @@ if __name__ == '__main__':
         #      'lower_wear', 'lower_color', 'face_mask', 'glasses', 'headwear', 'bag'], device='cam')
         # print(result2)
         #
-        # yolo = ObjectDetector()
-        # name, result = yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=True)
-        # print(name[0])
-        # print(result)
-        # name = yolo.detect(device='k4a', mode='realtime', attributes=None, depth=True)
-        # print('name:{}'.format(name))
+        yolo = ObjectDetector()
+        result = yolo.detect(device='cam', mode='realtime', find=None, depth=False, rotate=True, range=0.5)
+        for object in result:
+            print("name:{},box:{},x:{},y:{}".format(object.name, object.box, object.x, object.y))
 
     except rospy.ROSInterruptException:
         pass
